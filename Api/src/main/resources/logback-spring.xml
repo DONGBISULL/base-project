@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"></include>
+    <include resource="logback-spring-${spring.profiles.active}.xml"></include>
+
+    <!-- 컬러 출력을 지원 -->
+    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
+    <!--  일반적인 Throwable 오류 메시지 출력 -->
+    <conversionRule conversionWord="wex"
+                    converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter"/>
+    <!-- 확장된 형태의 Throwable 오류 메시지 출력  -->
+    <conversionRule conversionWord="wEx"
+                    converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter"/>
+    <!-- 톰캣 XML 구성 파일을 읽고 파싱할 때 사용 -->
+    <logger name="org.apache.catalina.startup.DigesterFactory" level="ERROR"/>
+    <!--
+        Tomcat의 LifecycleBase 클래스 로그에 대한 설정
+        호스팅 환경 웹 애플리케이션 컨텐츠 생명 주기 이벤트 처리 시 사용
+     -->
+    <logger name="org.apache.catalina.util.LifecycleBase" level="ERROR"/>
+    <!--
+     프로토콜 핸들러 클래스 NIO 기반의 HTTP 커넥터를 구현
+     톰캣 서버 시작 / 웹 애플리케이션 배포 /  서버 설정 변경 시점에 실행
+     네트워크 트래픽 클라이언트 요청 처리에 사용
+    -->
+    <logger name="org.apache.coyote.http11.Http11NioProtocol" level="WARN"/>
+    <!-- SSH 통신 시 보안 설정 처리에 사용
+        암호화 복호화 / 인증 권한 부여 / 암호화 키 관리 / 보안 설정
+     -->
+    <logger name="org.apache.sshd.common.util.SecurityUtils" level="WARN"/>
+    <!--
+    Tomcat의 NIO Selector Pool 클래스
+    NIO를 사용하면 Tomcat이 더 많은 클라이언트 요청을 처리할 수 있음
+    -->
+    <logger name="org.apache.tomcat.util.net.NioSelectorPool" level="WARN"/>
+    <!-- jetty 내장 서버를 이용한 작업 처리  -->
+    <logger name="org.eclipse.jetty.util.component.AbstractLifeCycle" level="ERROR"/>
+    <!--
+        데이터 유효성 검사시 사용되는 로그 처리
+     -->
+    <logger name="org.hibernate.validator.internal.util.Version" level="WARN"/>
+</configuration>
