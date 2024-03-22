@@ -9,6 +9,7 @@ import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity
 @Table(name = "member")
@@ -54,4 +55,6 @@ public class Member extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private ProviderType providerType;
 
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MemberRole> memberRoles;
 }
