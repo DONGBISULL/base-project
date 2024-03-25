@@ -15,7 +15,7 @@ import javax.persistence.*;
 @DiscriminatorColumn
 @Getter
 @Setter
-public class MemberRole {
+public class MemberRole  extends BaseEntity{
     @Id
     @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
     private Long id;

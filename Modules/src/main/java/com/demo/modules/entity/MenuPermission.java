@@ -15,12 +15,12 @@ import javax.persistence.*;
 @DiscriminatorColumn
 @Getter
 @Setter
-public class MenuPermission {
+public class MenuPermission  extends BaseEntity{
 
     @Id
     @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
     @Column(name = "permission_id")
-    private Long permissionId;
+    private String permissionId;
 
     @ManyToOne
     @JoinColumn(name = "menu_id")

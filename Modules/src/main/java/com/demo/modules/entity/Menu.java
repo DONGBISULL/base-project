@@ -6,15 +6,16 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity
-@Table(name = "Menu")
+@Table(name = "menu")
 @DynamicInsert
 @DynamicUpdate
 @DiscriminatorColumn
 @Getter
 @Setter
-public class Menu {
+public class Menu extends BaseEntity{
     @Id
     @Column(name = "id", length = 36)
     private String menuId;
@@ -35,6 +36,9 @@ public class Menu {
     @Column(name = "sort")
     private Integer sort;
 
-    @Column(name = "description", length = 255)
+    @Column(name = "description")
     private String description;
+
+    @OneToMany(mappedBy = "menu")
+    private List<MenuPermission> permissions;
 }
