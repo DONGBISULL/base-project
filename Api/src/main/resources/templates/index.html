@@ -1,0 +1,29 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>인덱스</title>
+</head>
+<body>
+<div th:if="${member != null}">
+    <ul>
+        <li th:text="|인가코드 = ${member?.kakaoLoginResponse?.accessToken}|">accessToken</li>
+        <li th:text="|액세스 토큰과 ID 토큰의 만료 시간(초) = ${member?.kakaoLoginResponse?.expiresIn}|">code</li>
+        <li th:text="|리프레시 토큰 값 = ${member?.kakaoLoginResponse?.refreshToken}|">refreshToken</li>
+        <li th:text="|리프레시 토큰 만료 시간(초) = ${member?.kakaoLoginResponse?.refreshTokenExpiresIn}|">refreshTokenExpiresIn
+        </li>
+        <li th:text="|사용자 닉네임 = ${member?.kakaoUserInfo?.properties?.nickname}|">nickname</li>
+    </ul>
+    <a th:href="@{'http://localhost:8080/kakao-logout?accessToken=' + ${member?.kakaoLoginResponse?.accessToken}}">로그아웃</a>
+
+</div>
+
+
+<!--?client_id=&redirect_uri=&response_type=code&scope=-->
+<!--// https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile-->
+<!---->
+<script th:inline="javascript">
+
+    // const kakaoLoginResponse = /*[[${member?.kakaoLoginResponse}]]*/ '';
+</script>
+</body>
+</html>

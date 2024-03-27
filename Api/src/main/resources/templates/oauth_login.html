@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>로그인</title>
+</head>
+<body>
+<div th:unless="${member != null}">
+    <a class="p-2"
+       th:href="@{${@environment.getProperty('kakao.login.prefix')}}">
+        <img th:src="@{/images/kakao_login_medium_narrow.png}" style="height:60px"/>
+    </a>
+    <br>
+    <a class="p-2"
+       th:href="@{${@environment.getProperty('google.login.prefix')}}">
+        구글 로그인
+    </a>
+    <!--    <a class="p-2"-->
+    <!--       th:href="@{${@environment.getProperty('kakao.login.prefix')} + '/oauth/authorize?client_id=' + ${@environment.getProperty('spring.security.oauth2.client.registration.kakao.client-id')} + '&redirect_uri=http://localhost:8080/login/social/kakao&response_type=code'}">-->
+    <!--        <img th:src="@{/images/kakao_login_medium_narrow.png}" style="height:60px"/>-->
+    <!--    </a>-->
+    <!--    <br>-->
+    <!--    <a class="p-2"-->
+    <!--       th:href="@{${@environment.getProperty('google.login.prefix')} + '/o/oauth2/auth?client_id=' +-->
+    <!--                ${@environment.getProperty('spring.security.oauth2.client.registration.google.client-id')} +-->
+    <!--                '&redirect_uri=http://localhost:8080/login/social/google&response_type=code&scope='+ ${#strings.arrayJoin(googleScopes, ' ')}}">-->
+    <!--        구글 로그인-->
+    <!--    </a>-->
+</div>
+</body>
+</html>
