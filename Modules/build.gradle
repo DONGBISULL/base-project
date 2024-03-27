@@ -51,6 +51,9 @@ dependencies {
     // java.lang.NoClassDefFoundError(javax.annotation.Generated) 발생 시 추가
     annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
 
+    //    JWT 위해 추가
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.security:spring-security-oauth2-client'
 }
 
 tasks.named('test') {
