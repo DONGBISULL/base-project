@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -27,7 +29,10 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.AuthenticatedPrincipalOAuth2AuthorizedClientRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
+import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -54,7 +59,7 @@ public class SecurityConfig {
     // 구글 스코프
     private final GoogleOAuth2Properties googleScopes;
 
-    private final OAuth2AuthenticationSuccessHandler auth2AuthenticationSuccessHandler;
+//    private final OAuth2AuthenticationSuccessHandler auth2AuthenticationSuccessHandler;
 
     private final OAuth2AuthenticationFailHandler auth2AuthenticationFailHandler;
 
@@ -68,11 +73,13 @@ public class SecurityConfig {
         return new CustomUserDetailsService(); // CustomUserDetailsService는 UserDetailsService 인터페이스를 구현한 클래스입니다.
     }
 
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .anyRequest().permitAll()
+                        .antMatchers("/oauth/**", "/login/**", "/images/**", "/favicon.ico/**").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .oauth2Login(
                         oauth2 -> oauth2
@@ -85,22 +92,21 @@ public class SecurityConfig {
                                         redirection ->
                                                 redirection
                                                         .baseUri("/login/social/**")
-                                )
+                                ).tokenEndpoint(tokenEndpoint -> tokenEndpoint // 토큰 엔드포인트 설정
+                                        .accessTokenResponseClient(accessTokenResponseClient()))
                                 .userInfoEndpoint(userInfo -> userInfo
                                         .userService(auth2UserService)
                                 )
                                 .successHandler( // // 인증 성공 시 Handler
-                                        auth2AuthenticationSuccessHandler
+                                        new OAuth2AuthenticationSuccessHandler(auth2AuthorizedClientService())
                                 )
                                 .failureHandler( // 인증 실패 시 Handler
                                         auth2AuthenticationFailHandler
                                 )
-
 //                                .defaultSuccessUrl("/")
 
 //                              .failureUrl("/auth/error");
                 );
-
         return http.build();
     }
 
@@ -116,8 +122,7 @@ public class SecurityConfig {
 
 
     @Bean
-    public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>
-    accessTokenResponseClient() {
+    public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
         return new NimbusAuthorizationCodeTokenResponseClient();
     }
 
@@ -147,16 +152,6 @@ public class SecurityConfig {
     public OAuth2AuthorizedClientRepository authorizedClientRepository() {
         return new AuthenticatedPrincipalOAuth2AuthorizedClientRepository(auth2AuthorizedClientService());
     }
-// OAuth 2.0 인증 코드 그랜트(authorization code grant)를 사용하여 인증을 요청하는 엔드포인트
-//    private OAuth2AuthorizationRequestResolver authorizationRequestResolver(
-//            ClientRegistrationRepository clientRegistrationRepository) {
-//
-//        DefaultOAuth2AuthorizationRequestResolver authorizationRequestResolver =
-//                new DefaultOAuth2AuthorizationRequestResolver(
-//                        clientRegistrationRepository, "/login/social");
-//
-//        return authorizationRequestResolver;
-//    }
 
     private static String CLIENT_PROPERTY_KEY = "spring.security.oauth2.client.registration.";
 
@@ -173,7 +168,7 @@ public class SecurityConfig {
                 CLIENT_PROPERTY_KEY + client + ".client-secret");
 
         // Redirect URI 설정
-        String redirectUri = env.getProperty(CLIENT_PROPERTY_KEY + client + ".redirect-uri");
+//        String redirectUri = env.getProperty(CLIENT_PROPERTY_KEY + client + ".redirect-uri");
 
         if ("google".equals(client)) {
             return CustomOAuth2Provider.GOOGLE.getBuilder(client)
