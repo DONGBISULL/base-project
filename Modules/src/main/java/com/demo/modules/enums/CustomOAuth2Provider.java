@@ -7,19 +7,24 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 
 public enum CustomOAuth2Provider {
     GOOGLE {
+        private static final String REDIRECT_URL = "{baseUrl}/login/social/{registrationId}";
+//        private static final String REDIRECT_URL = "http://localhost:8080/login/social/google";
+
         @Override
         public ClientRegistration.Builder getBuilder(String registrationId) {
             return CommonOAuth2Provider.GOOGLE
-                    .getBuilder(registrationId);
+                    .getBuilder(registrationId)
+                    .redirectUri(REDIRECT_URL);
         }
 
     },
     KAKAO {
         private static final String AUTHORIZATION_URI = "https://kauth.kakao.com/oauth/authorize";
         private static final String TOKEN_URI = "https://kauth.kakao.com/oauth/token";
-        private static final String USER_INFO_URI = "https://kapi.kakao.com/v1/user/me";
+        private static final String USER_INFO_URI = "https://kapi.kakao.com/v2/user/me";
         private static final String USER_NAME_ATTRIBUTE_NAME = "id";
-        private static final String REDIRECT_URL = "http://localhost:8080/login/oauth2/authorization/kakao";
+        //        private static final String REDIRECT_URL = "http://localhost:8080/login/social/kakao";
+        private static final String REDIRECT_URL = "{baseUrl}/login/social/{registrationId}";
 
         @Override
         public ClientRegistration.Builder getBuilder(String registrationId) {
@@ -39,7 +44,8 @@ public enum CustomOAuth2Provider {
         private static final String TOKEN_URI = "https://nid.naver.com/oauth2.0/token";
         private static final String USER_INFO_URI = "https://openapi.naver.com/v1/nid/me";
         private static final String USER_NAME_ATTRIBUTE_NAME = "response";
-        private static final String REDIRECT_URL = "http://localhost:8080/login/oauth2/authorization/naver";
+        //        private static final String REDIRECT_URL = "http://localhost:8080/login/social/naver";
+        private static final String REDIRECT_URL = "{baseUrl}/login/social/{registrationId}";
 
         @Override
         public ClientRegistration.Builder getBuilder(String registrationId) {
