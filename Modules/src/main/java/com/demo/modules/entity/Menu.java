@@ -12,9 +12,9 @@ import java.util.List;
 @Table(name = "menu")
 @DynamicInsert
 @DynamicUpdate
-@DiscriminatorColumn
 @Getter
 @Setter
+@Inheritance(strategy = InheritanceType.JOINED)
 public class Menu extends BaseEntity{
     @Id
     @Column(name = "id", length = 36)

@@ -1,13 +1,13 @@
 package com.demo.modules.enums;
 
-public enum MemberStatusEnum {
-    ACTIVE("가입"),
-    INACTIVE("휴면"),
-    BLOCKED("차단");
+public enum Role {
+    ROLE_MEMEBR("회원"),
+    ROLE_ADMIN("관리자"),
+    ROLE_GUEST("게스트");
 
     private final String name;
 
-    MemberStatusEnum(String name) {
+    Role(String name) {
         this.name = name;
     }
 
