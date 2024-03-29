@@ -55,7 +55,7 @@ tasks.named('test') {
 }
 
 //querydsl 추가 시작
-def generated = 'src/main/generated'
+def generated = 'src/main/generated/querydsl'
 // querydsl QClass 파일 생성 위치를 지정
 tasks.withType(JavaCompile) {
     options.getGeneratedSourceOutputDirectory().set(file(generated))
