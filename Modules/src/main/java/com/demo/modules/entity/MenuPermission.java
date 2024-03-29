@@ -1,5 +1,6 @@
 package com.demo.modules.entity;
 
+import com.demo.modules.enums.Role;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicInsert;
@@ -12,22 +13,21 @@ import javax.persistence.*;
 @Table(name = "menu_permission")
 @DynamicInsert
 @DynamicUpdate
-@DiscriminatorColumn
 @Getter
 @Setter
-public class MenuPermission  extends BaseEntity{
+@Inheritance(strategy = InheritanceType.JOINED)
+public class MenuPermission extends BaseEntity {
 
     @Id
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(name = "permission_id")
+    @GeneratedValue(generator = "uuid2")
+    @GenericGenerator(name="uuid2", strategy = "uuid2")    @Column(name = "permission_id")
     private String permissionId;
 
     @ManyToOne
     @JoinColumn(name = "menu_id")
     private Menu menu;
 
-    @ManyToOne
-    @JoinColumn(name = "role_id")
+    @Enumerated(EnumType.STRING)
     private Role role;
 
     @Column(name = "can_create")
