@@ -1,17 +1,15 @@
 package com.demo.api.security.service;
 
 import com.demo.api.service.MemberService;
+import com.demo.modules.dto.CustomUserDetail;
+import com.demo.modules.dto.MemberUser;
 import com.demo.modules.dto.OAuthAttribute;
-import com.demo.modules.dto.OAuthUserDto;
 import com.demo.modules.entity.Member;
 import com.demo.modules.enums.ProviderType;
-import com.demo.modules.enums.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -38,37 +36,70 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         log.debug("=========== loadUser ===============");
         log.trace("Load user {}", userRequest);
 
+//        ClientRegistration clientRegistration = userRequest.getClientRegistration();
+//        log.debug("=========== clientRegistration  ===============");
+//        log.debug(clientRegistration.toString());
+//
+//        log.debug("=========== oAuth2User  ===============");
+//        OAuth2UserService<OAuth2UserRequest, OAuth2User> delegate = new DefaultOAuth2UserService();
+//        OAuth2User oAuth2User = delegate.loadUser(userRequest);
+        OAuth2User oAuth2User = loadOAuth2User(userRequest);
+        log.debug(oAuth2User.toString());
+
+//        유저정보로 contirbute 생성
+//        OAuthAttribute oAuthAttribute = OAuthAttribute.of(provider, userNameAttributeName, attributes);
+        ClientRegistration clientRegistration = userRequest.getClientRegistration();
+        String registrationId = clientRegistration.getRegistrationId();
+        ProviderType provider = getProvider(registrationId);
+
+        OAuthAttribute oAuthAttribute = convertToOAuthAttribute(clientRegistration, oAuth2User, provider);
+        Member member = memberService.getSocialMember(oAuthAttribute, provider);
+
+        CustomUserDetail userDto = createCustomUserDetail(oAuth2User, member);
+        log.debug("=========== userDto  ===============");
+        log.debug(userDto.toString());
+        return userDto;
+    }
+
+    /* user 정보 추출 함수 생성 */
+    private CustomUserDetail createCustomUserDetail(OAuth2User oAuth2User, Member member) {
+        Set<GrantedAuthority> authorities = extractAuthorities(member);
+//        OAuthUserDto userDto = new OAuthUserDto(authorities, attributes, userNameAttributeName);
+        CustomUserDetail userDto = new CustomUserDetail(new MemberUser(member, member.getPassword(), authorities), oAuth2User.getAttributes());
+        return userDto;
+    }
+
+    /* 토큰 정보 로드 */
+    private OAuth2User loadOAuth2User(OAuth2UserRequest userRequest) {
         ClientRegistration clientRegistration = userRequest.getClientRegistration();
         log.debug("=========== clientRegistration  ===============");
         log.debug(clientRegistration.toString());
 
         log.debug("=========== oAuth2User  ===============");
         OAuth2UserService<OAuth2UserRequest, OAuth2User> delegate = new DefaultOAuth2UserService();
-        OAuth2User oAuth2User = delegate.loadUser(userRequest);
-        log.debug(oAuth2User.toString());
-
-        Map<String, Object> attributes = oAuth2User.getAttributes();
-        ClientRegistration.ProviderDetails providerDetails = clientRegistration.getProviderDetails();
-        String userNameAttributeName = providerDetails.getUserInfoEndpoint().getUserNameAttributeName();
-        String registrationId = clientRegistration.getRegistrationId();
-        ProviderType provider = getProvider(registrationId);
-
-//        유저정보로 contirbute 생성
-        OAuthAttribute oAuthAttribute = OAuthAttribute.of(provider, userNameAttributeName, attributes);
-
-        Member member = memberService.getMember(oAuthAttribute, provider);
-
-        Set<Role> roles = member.getRoles();
-        Set<GrantedAuthority> authorities = roles.stream()
-                .map(role -> new SimpleGrantedAuthority(role.name()))
-                .collect(Collectors.toSet());
-        OAuthUserDto userDto = new OAuthUserDto(authorities, attributes, userNameAttributeName);
-        log.debug("=========== userDto  ===============");
-        log.debug(userDto.toString());
-        return userDto;
+        return delegate.loadUser(userRequest);
     }
 
-    public ProviderType getProvider(String registrationId) {
+    /* 속성으로 변환 */
+    private OAuthAttribute convertToOAuthAttribute(ClientRegistration clientRegistration, OAuth2User oAuth2User, ProviderType provider) {
+
+        ClientRegistration.ProviderDetails providerDetails = clientRegistration.getProviderDetails();
+        String userNameAttributeName = providerDetails.getUserInfoEndpoint().getUserNameAttributeName();
+
+        Map<String, Object> attributes = oAuth2User.getAttributes();
+
+        return OAuthAttribute.of(provider, userNameAttributeName, attributes);
+    }
+
+    /* 권한 타입 생성 */
+    private Set<GrantedAuthority> extractAuthorities(Member member) {
+        return member.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.name()))
+                .collect(Collectors.toSet());
+    }
+
+    /* 프로바이더 타입 얻기 */
+    private ProviderType getProvider(String registrationId) {
         if (registrationId == null) {
             return null;
         }
