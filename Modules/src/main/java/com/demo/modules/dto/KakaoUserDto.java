@@ -15,7 +15,7 @@ public class KakaoUserDto extends OAuth2UserInfo {
 
     @Override
     public String getNickname() {
-        Map<String, Object> kakaoAcount = (Map<String, Object>) attributes.get("kakao_accout");
+        Map<String, Object> kakaoAcount = (Map<String, Object>) attributes.get("kakao_account");
 
         if (kakaoAcount == null) {
             return null;
@@ -31,7 +31,7 @@ public class KakaoUserDto extends OAuth2UserInfo {
 
     @Override
     public String getImageUrl() {
-        Map<String, Object> kakaoAcount = (Map<String, Object>) attributes.get("kakao_accout");
+        Map<String, Object> kakaoAcount = (Map<String, Object>) attributes.get("kakao_account");
 
         if (kakaoAcount == null) {
             return null;
@@ -42,6 +42,31 @@ public class KakaoUserDto extends OAuth2UserInfo {
             return null;
         }
 
-        return (String) profile.get("thumbnail_image_url");
+        return (String) profile.get("profile_image_url");
+    }
+
+    @Override
+    public String getEmail() {
+        Map<String, Object> kakaoAcount = (Map<String, Object>) attributes.get("kakao_account");
+        if (kakaoAcount == null) {
+            return null;
+        }
+        boolean hasEmail = (boolean) kakaoAcount.get("has_email");
+
+        if (!hasEmail) {
+            return null;
+        }
+
+        boolean isEmailVerified = (boolean) kakaoAcount.get("is_email_verified");
+        if (!isEmailVerified) {
+            return null;
+        }
+
+        boolean isEmailValid = (boolean) kakaoAcount.get("is_email_valid");
+        if (!isEmailValid) {
+            return null;
+        }
+
+        return (String) kakaoAcount.get("email");
     }
 }

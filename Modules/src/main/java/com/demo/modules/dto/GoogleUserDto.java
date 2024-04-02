@@ -29,4 +29,18 @@ public class GoogleUserDto extends OAuth2UserInfo {
         }
         return imageUrl;
     }
+
+    @Override
+    public String getEmail() {
+        String email = (String) attributes.get("email");
+        boolean isValid = (boolean) attributes.get("email_verified");
+        if (email == null) {
+            return null;
+        }
+
+        if (!isValid) {
+            return null;
+        }
+        return email;
+    }
 }
