@@ -5,6 +5,7 @@ import com.demo.modules.entity.BaseEntity;
 import com.demo.modules.enums.MemberStatusEnum;
 import com.demo.modules.enums.ProviderType;
 import com.demo.modules.enums.Role;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicInsert;
@@ -23,12 +24,25 @@ import java.util.UUID;
 @DynamicUpdate
 @Getter
 @Setter
-@Inheritance(strategy = InheritanceType.JOINED)
+//@Inheritance(strategy = InheritanceType.JOINED)
 public class Member extends BaseEntity {
 
     private static final long serialVersionUID = 2820667885310603793L;
 
     public Member() {
+    }
+
+    @Builder
+    public Member(String email, String name, String imageUrl,
+                  ProviderType providerType, Set<Role> roles, String socialId,
+                  MemberStatusEnum status) {
+        this.email = email;
+        this.name = name;
+        this.imageUrl = imageUrl;
+        this.providerType = providerType;
+        this.roles = roles;
+        this.socialId = socialId;
+        this.status = status;
     }
 
     public Member(String id) {
