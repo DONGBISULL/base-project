@@ -1,18 +1,15 @@
 package com.demo.api.security.provider;
 
 
-import com.demo.modules.dto.CustomUserDetail;
 import com.demo.modules.dto.JwtTokenDto;
-import com.demo.modules.dto.MemebrDto;
+import com.demo.modules.dto.MemberDto;
+import com.demo.modules.enums.TokenStatus;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -56,41 +53,44 @@ public class JwtTokenProvider {
         key = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    /** 처음 로그인했을 경우 토큰 생성 */
-    public JwtTokenDto createToken(Authentication authentication) {
-        CustomUserDetail principal = (CustomUserDetail) authentication.getPrincipal();
-        System.out.println(principal);
-        Map<String, Object> claims = new HashMap<>();
+    /**
+     * 처음 로그인했을 경우 토큰 생성
+     */
+    public JwtTokenDto createToken(MemberDto memberDto) {
+        long now = (new Date()).getTime();
+        String accessToken = generateAccessToken(memberDto , now);
+        String refreshToken = generateRefreshToken(now);
+        return JwtTokenDto.builder()
+                .memberId(memberDto.getId())
+                .refreshToken(refreshToken)
+                .accessToken(accessToken)
+                .accessExpirationDate(new Date(now + accessTokenExpireTime))
+                .refreshExpirationDate(new Date(now + refreshTokenExpireTime))
+                .build();
+    }
 
-        MemebrDto member = principal.getMember();
-        claims.put("username", principal.getUsername());
+    /* memberDto 만으로 토큰 생성하도록 구현 */
+    public String generateAccessToken(MemberDto memberDto , long now){
+        Map<String, Object> claims = new HashMap<>();
+        setMemberClaim(memberDto, claims);
+        return createAccessToken(memberDto, claims, now);
+    }
+
+    /**
+     * Claim 세팅하는 함수 분리
+     */
+    private void setMemberClaim(MemberDto member, Map<String, Object> claims) {
+        claims.put("username", member.getId());
         claims.put("email", member.getEmail());
         claims.put("socialId", member.getSocialId());
         claims.put("providerType", member.getProviderType());
         claims.put("imageUrl", member.getImageUrl());
-
-        long now = (new Date()).getTime();
-        if (authentication instanceof OAuth2AuthenticationToken) {
-            String accessToken = createAccessToken(authentication, claims, now);
-            String refreshToken = createRefreshToken(now);
-            return JwtTokenDto.builder()
-                    .memberId(principal.getUsername())
-                    .refreshToken(refreshToken)
-                    .accessToken(accessToken)
-                    .refreshExpirationDate(new Date(now + refreshTokenExpireTime))
-                    .build();
-        } else if (authentication instanceof UsernamePasswordAuthenticationToken) {
-
-        }
-        return null;
     }
-
-
 
     /**
      * 리프레시 토큰 생성
      */
-    private String createRefreshToken(long now) {
+    private String generateRefreshToken(long now) {
         Date refreshTokenExpiresTime = new Date(now + refreshTokenExpireTime);
         String refreshToken = Jwts.builder()
                 .header()
@@ -105,15 +105,15 @@ public class JwtTokenProvider {
     /**
      * 액세스 토큰 생성
      */
-    private String createAccessToken(Authentication authentication, Map<String, Object> claims, long now) {
+    private String createAccessToken(MemberDto memberDto, Map<String, Object> claims, long now) {
         Date accessTokenExpiresTime = new Date(now + accessTokenExpireTime);
-        log.debug(authentication.toString());
+        log.debug(memberDto.toString());
         String accessToken = Jwts.builder()
                 .header()
                 .type("JWT")
                 .and()
                 .issuer(appName)
-                .subject(authentication.getName())
+                .subject(memberDto.getId())
                 .expiration(accessTokenExpiresTime)
                 .claims(claims)
                 .signWith(key)
@@ -122,7 +122,7 @@ public class JwtTokenProvider {
     }
 
 
-    public Boolean validateToken(String token) {
+    public TokenStatus validateToken(String token) {
         try {
             Jws<Claims> claimsJws = getJwtClaims(token);
             Claims payload = claimsJws.getPayload();
@@ -139,16 +139,16 @@ public class JwtTokenProvider {
             Date expiration = payload.getExpiration();
             Date notBefore = Optional.ofNullable(payload.getNotBefore()).orElse(now);
             if (now.after(notBefore) && now.before(expiration)) {
-                return true;
+                return TokenStatus.VALID;
             } else {
-                return false;
+                return TokenStatus.EXPIRED;
             }
         } catch (IllegalArgumentException e) {
             log.debug("jwt 문자열이 null 이거나 비어있음 ");
         } catch (JwtException e) {
             log.debug("나 유효성을 검증할 수 없는 경우");
         }
-        return false;
+        return TokenStatus.INVALID;
     }
 
     public Jws<Claims> getJwtClaims(String token) {
@@ -184,28 +184,24 @@ public class JwtTokenProvider {
 
 
     public void refreshTokenWithCookie(JwtTokenDto tokenDto) {
-        String refreshToken = tokenDto.getRefreshToken();
-        Cookie cookie = new Cookie("RefreshToken", refreshToken);
+        setCookie(tokenDto.getRefreshToken(), "RefreshToken", tokenDto.getRefreshExpirationDate());
+    }
+
+    public void accessTokenWithCookie(JwtTokenDto tokenDto) {
+        setCookie(tokenDto.getAccessToken(), "AccessToken", tokenDto.getAccessExpirationDate());
+    }
+
+    public void setCookie(String token, String tokenType, Date expireTime) {
+        String accessToken = token;
+        Cookie cookie = new Cookie(tokenType, accessToken);
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
-        cookie.setSecure(true);
         Date now = new Date();
-        long maxTime = now.getTime() - tokenDto.getRefreshExpirationDate().getTime();
-        cookie.setMaxAge((int)  maxTime);
+        long maxTime = now.getTime() - expireTime.getTime();
+        cookie.setMaxAge((int) maxTime);
         HttpServletResponse response = ((ServletRequestAttributes) RequestContextHolder
                 .getRequestAttributes()).getResponse();
         response.addCookie(cookie);
     }
-
-//    public void setRefreshTokenAtCookie(RefreshToken refreshToken) {
-//        Cookie cookie = new Cookie("refreshToken", refreshToken.getRefreshToken());
-//        cookie.setHttpOnly(true);
-//        cookie.setSecure(true);
-//        cookie.setMaxAge(refreshToken.getExpiration().intValue());
-//        HttpServletResponse response = ((ServletRequestAttributes) RequestContextHolder
-//                .getRequestAttributes()).getResponse();
-//        response.addCookie(cookie);
-//    }
-
 
 }
