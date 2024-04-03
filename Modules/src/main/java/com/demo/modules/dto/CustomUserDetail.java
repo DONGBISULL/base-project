@@ -21,8 +21,8 @@ public class CustomUserDetail implements OAuth2User, UserDetails {
         this.attributes = attributes;
     }
 
-    public MemebrDto getMember(){
-        return user.getMemebrDto();
+    public MemberDto getMember(){
+        return user.getMemberDto();
     }
     @Override
     public String getPassword() {
@@ -31,7 +31,7 @@ public class CustomUserDetail implements OAuth2User, UserDetails {
 
     @Override
     public String getUsername() {
-        return user.getMemebrDto().getId();
+        return user.getMemberDto().getId();
     }
 
     @Override
@@ -66,6 +66,6 @@ public class CustomUserDetail implements OAuth2User, UserDetails {
 
     @Override
     public String getName() {
-        return user.getMemebrDto().getId();
+        return user.getMemberDto().getId();
     }
 }

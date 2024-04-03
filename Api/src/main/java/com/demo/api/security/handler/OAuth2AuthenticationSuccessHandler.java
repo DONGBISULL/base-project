@@ -1,7 +1,9 @@
 package com.demo.api.security.handler;
 
 import com.demo.api.security.provider.JwtTokenProvider;
+import com.demo.modules.dto.CustomUserDetail;
 import com.demo.modules.dto.JwtTokenDto;
+import com.demo.modules.dto.MemberDto;
 import com.demo.modules.entity.Member;
 import com.demo.modules.entity.Token;
 import com.demo.modules.repository.TokenRepository;
@@ -37,9 +39,9 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         System.out.println("======= OAuth2AuthenticationSuccessHandler onAuthenticationSuccess =========");
 //        OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
-        JwtTokenDto token = jwtTokenProvider.createToken(authentication);
-        log.debug(token.toString());
-        String accessToken = token.getAccessToken();
+        CustomUserDetail principal = (CustomUserDetail) authentication.getPrincipal();
+        MemberDto member = principal.getMember();
+        JwtTokenDto token = jwtTokenProvider.createToken(member);
 
         /* 토큰 정보 저장 */
         tokenRepository.save(Token.builder()
@@ -49,10 +51,16 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
                 .build());
 
         /* 쿠키로 리프레시 토큰 생성 */
+        jwtTokenProvider.accessTokenWithCookie(token);
         jwtTokenProvider.refreshTokenWithCookie(token);
-        response.addHeader("Authorization", "Bearer " + accessToken);
 
+        /* 프론트가 따로 분리된 상황이 아니므로 리다이렉트 처리 존재
+         *   보통 헤더에 실어서 전달만 함
+         * */
         response.sendRedirect("/");
+
+//        response.addHeader("Authorization", "Bearer " + accessToken);
+
 //        response.addHeader("Refresh", refreshToken);
 //        response.addHeader("location","http://localhost:3000");
 //        if (authentication instanceof OAuth2AuthenticationToken) {

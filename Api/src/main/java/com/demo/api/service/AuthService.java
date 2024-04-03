@@ -1,15 +1,20 @@
 package com.demo.api.service;
 
 import com.demo.api.security.provider.JwtTokenProvider;
+import com.demo.modules.dto.JwtTokenDto;
+import com.demo.modules.dto.MemberDto;
 import com.demo.modules.entity.Member;
 import com.demo.modules.entity.Token;
+import com.demo.modules.enums.TokenStatus;
 import com.demo.modules.repository.TokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -21,13 +26,28 @@ public class AuthService {
 
     private final TokenRepository tokenRepository;
 
+    private final MemberService memberService;
+
+    @Value("${jwt.access-token.expire-time}")
+    private Long accessTokenExpireTime;
+
     public void reissueToken(String refreshToken) {
+        /* 유효성 검사*/
         validateRefreshToken(refreshToken);
-//        재발행 로직
+        /* */
+        String memberId = jwtTokenProvider.getJwtCliamByMemberId(refreshToken);
+        MemberDto member = memberService.getMember(memberId);
+        long now = (new Date()).getTime();
+        String accessToken = jwtTokenProvider.generateAccessToken(member, now);
+        jwtTokenProvider.accessTokenWithCookie(JwtTokenDto.builder()
+                        .accessToken(accessToken)
+                        .accessExpirationDate(new Date(now + accessTokenExpireTime))
+                        .build());
+
     }
 
     private void validateRefreshToken(String refreshToken) {
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
+        if (TokenStatus.VALID != jwtTokenProvider.validateToken(refreshToken)) {
             throw new RuntimeException("유효하지 않은 refresh 토큰");
         }
 
@@ -52,6 +72,5 @@ public class AuthService {
             throw new IllegalArgumentException("토큰의 유효 기간이 만료되었습니다.");
         }
     }
-
 
 }

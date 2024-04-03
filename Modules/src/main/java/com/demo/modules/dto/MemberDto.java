@@ -12,7 +12,7 @@ import java.util.Set;
 @Setter
 @Getter
 @Builder
-public class MemebrDto {
+public class MemberDto {
     private String id;
     private String password;
     private String name;

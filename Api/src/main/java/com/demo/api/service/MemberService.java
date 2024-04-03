@@ -1,5 +1,6 @@
 package com.demo.api.service;
 
+import com.demo.modules.dto.MemberDto;
 import com.demo.modules.dto.OAuth2UserInfo;
 import com.demo.modules.dto.OAuthAttribute;
 import com.demo.modules.entity.Member;
@@ -7,6 +8,7 @@ import com.demo.modules.enums.ProviderType;
 import com.demo.modules.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,18 @@ public class MemberService {
     private final MemberRepository memberRepository;
 
     private final PasswordEncoder passwordEncoder;
+
+    private final ModelMapper modelMapper;
+
+    public MemberDto getMember(String memberId) {
+        Member target = findByMemberId(memberId);
+        return modelMapper.map(target, MemberDto.class);
+    }
+
+    private Member findByMemberId(String memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Member not found with ID: " + memberId));
+    }
 
     /* 소셜 회원 처리 */
     @Transactional
