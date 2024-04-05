@@ -1,43 +1,22 @@
 package com.demo.api.config;
 
 
-import com.demo.api.security.filter.JwtTokenFilter;
-import com.demo.api.security.handler.OAuth2AuthenticationFailHandler;
-import com.demo.api.security.handler.OAuth2AuthenticationSuccessHandler;
-import com.demo.api.security.provider.JwtTokenProvider;
-import com.demo.modules.enums.CustomOAuth2Provider;
 import com.demo.api.security.anotation.CorsProperties;
-import com.demo.api.security.anotation.GoogleOAuth2Properties;
-import com.demo.api.security.service.CustomOAuth2UserService;
 import com.demo.api.security.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.client.*;
-import org.springframework.security.oauth2.client.endpoint.NimbusAuthorizationCodeTokenResponseClient;
-import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
-import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
-import org.springframework.security.oauth2.client.web.AuthenticatedPrincipalOAuth2AuthorizedClientRepository;
-import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Arrays;
 
 @Configuration
 @RequiredArgsConstructor
@@ -59,6 +38,7 @@ public class SecurityConfig {
                 , "X-Requested-With"
                 , "remember-me"
                 , "Authorization" // JWT
+                , "Access-Control-Allow-Origin"
                 , "X-CSRF-Token" //  CSRF 토큰
                 , "X-Requested-With" //  AJAX 요청을 구분
                 , "Connection"  //HTTP 연결 관련 정보를 포함
@@ -81,6 +61,12 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /* 시큐리티 제외 항목 추가  */
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring().antMatchers("/static/js/**", "/static/images/**", "/static/css/**", "/static/scss/**", "/favicon.*", "/*/icon-*");
     }
 
 }

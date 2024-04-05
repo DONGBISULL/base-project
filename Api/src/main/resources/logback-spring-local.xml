@@ -1,7 +1,7 @@
 <included>
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
-    <springProperty name="logging.level.root" source="logging.level.root" defaultValue="INFO"/>
+    <springProperty name="logging.level.root" source="logging.level.root" defaultValue="DEBUG"/>
     <!-- ThresholdFilter를 적용한 appender 설정 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">

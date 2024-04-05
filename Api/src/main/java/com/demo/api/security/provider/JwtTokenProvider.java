@@ -96,6 +96,7 @@ public class JwtTokenProvider {
                 .header()
                 .type("JWT")
                 .and()
+                .notBefore(new Date(now))
                 .expiration(refreshTokenExpiresTime)
                 .signWith(key)
                 .compact();
@@ -113,6 +114,7 @@ public class JwtTokenProvider {
                 .type("JWT")
                 .and()
                 .issuer(appName)
+                .notBefore(new Date(now))
                 .subject(memberDto.getId())
                 .expiration(accessTokenExpiresTime)
                 .claims(claims)
@@ -146,7 +148,12 @@ public class JwtTokenProvider {
         } catch (IllegalArgumentException e) {
             log.debug("jwt 문자열이 null 이거나 비어있음 ");
         } catch (JwtException e) {
-            log.debug("나 유효성을 검증할 수 없는 경우");
+            if (e instanceof ExpiredJwtException) {
+                log.debug("토큰이 만료되었습니다.");
+                return TokenStatus.EXPIRED;
+            } else {
+                log.debug("나 유효성을 검증할 수 없는 경우");
+            }
         }
         return TokenStatus.INVALID;
     }
@@ -195,9 +202,9 @@ public class JwtTokenProvider {
         String accessToken = token;
         Cookie cookie = new Cookie(tokenType, accessToken);
         cookie.setHttpOnly(true);
-        cookie.setSecure(true);
+//        cookie.setSecure(true);
         Date now = new Date();
-        long maxTime = now.getTime() - expireTime.getTime();
+        long maxTime =  expireTime.getTime() - now.getTime() ;
         cookie.setMaxAge((int) maxTime);
         HttpServletResponse response = ((ServletRequestAttributes) RequestContextHolder
                 .getRequestAttributes()).getResponse();
