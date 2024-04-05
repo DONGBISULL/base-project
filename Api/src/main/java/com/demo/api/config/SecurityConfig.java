@@ -5,6 +5,7 @@ import com.demo.api.security.anotation.CorsProperties;
 import com.demo.api.security.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -24,10 +25,8 @@ import java.util.Arrays;
 @Slf4j
 public class SecurityConfig {
 
-    private final CorsProperties corsProperties;
-
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(CorsProperties corsProperties) {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(corsProperties.getAllowedOrigins()); // 모든 origin 허용
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "DELETE", "PUT")); // 모든 HTTP 메서드 허용
