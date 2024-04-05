@@ -9,6 +9,7 @@ import com.demo.modules.entity.Token;
 import com.demo.modules.repository.TokenRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -28,6 +29,9 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
     private final TokenRepository tokenRepository;
 
+    @Value("${front.api}")
+    private String frontApi;
+
     @Autowired
     public OAuth2AuthenticationSuccessHandler(OAuth2AuthorizedClientService authorizedClientService, JwtTokenProvider jwtTokenProvider, TokenRepository tokenRepository) {
         this.authorizedClientService = authorizedClientService;
@@ -38,7 +42,6 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         System.out.println("======= OAuth2AuthenticationSuccessHandler onAuthenticationSuccess =========");
-//        OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
         CustomUserDetail principal = (CustomUserDetail) authentication.getPrincipal();
         MemberDto member = principal.getMember();
         JwtTokenDto token = jwtTokenProvider.createToken(member);
@@ -53,12 +56,13 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         /* 쿠키로 리프레시 토큰 생성 */
         jwtTokenProvider.accessTokenWithCookie(token);
         jwtTokenProvider.refreshTokenWithCookie(token);
+        response.addHeader("Authorization", "Bearer " + token.getAccessToken());
+
+        log.debug("login success !!!!");
 
         /* 프론트가 따로 분리된 상황이 아니므로 리다이렉트 처리 존재
          *   보통 헤더에 실어서 전달만 함
          * */
-        response.sendRedirect("/");
-
 //        response.addHeader("Authorization", "Bearer " + accessToken);
 
 //        response.addHeader("Refresh", refreshToken);
@@ -66,9 +70,6 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 //        if (authentication instanceof OAuth2AuthenticationToken) {
 //            // OAuth2 소셜 로그인인 경우의 처리
 //            System.out.println("=======  OAuth2AuthenticationToken =========");
-//
-//
-//
 ////            String registrationId = oauthToken.getAuthorizedClientRegistrationId();
 ////            String principalName = oauthToken.getPrincipal().getName();
 ////            OAuth2AuthorizedClient authorizedClient = authorizedClientService.loadAuthorizedClient(registrationId, principalName);

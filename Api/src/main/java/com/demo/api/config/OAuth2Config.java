@@ -25,6 +25,7 @@ import org.springframework.security.oauth2.client.registration.InMemoryClientReg
 import org.springframework.security.oauth2.client.web.AuthenticatedPrincipalOAuth2AuthorizedClientRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.util.Arrays;
 import java.util.List;
@@ -55,7 +56,7 @@ public class OAuth2Config {
 
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .antMatchers("/oauth/**", "/login/**", "/images/**", "/favicon.ico/**").permitAll()
+                        .antMatchers("/oauth/**", "/login/**", "/images/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(
@@ -86,10 +87,10 @@ public class OAuth2Config {
         http.csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
-//        http.addFilterBefore(
-//                jwtTokenFilter,
-//                UsernamePasswordAuthenticationFilter.class
-//        );
+        http.addFilterBefore(
+                jwtTokenFilter,
+                UsernamePasswordAuthenticationFilter.class
+        );
 
         return http.build();
     }
