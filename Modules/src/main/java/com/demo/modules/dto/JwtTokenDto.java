@@ -18,4 +18,6 @@ public class JwtTokenDto {
     private Date refreshExpirationDate; // 리프레시 토큰 만료시간
 
     private String accessToken; // 액세스 토큰
+
+    private Date accessExpirationDate;; // 액세스 토큰 만료시간
 }
