@@ -1,6 +1,7 @@
 package com.demo.api.config;
 
 import com.demo.api.security.anotation.GoogleOAuth2Properties;
+import com.demo.api.security.filter.JwtExceptionFilter;
 import com.demo.api.security.filter.JwtTokenFilter;
 import com.demo.api.security.handler.OAuth2AuthenticationFailHandler;
 import com.demo.api.security.handler.OAuth2AuthenticationSuccessHandler;
@@ -47,6 +48,8 @@ public class OAuth2Config {
 
     private final JwtTokenFilter jwtTokenFilter;
 
+    private final JwtExceptionFilter jwtExceptionFilter;
+
     private final TokenRepository tokenRepository;
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -83,13 +86,22 @@ public class OAuth2Config {
                                 )
                 );
 
+        http.cors();
+
         /* jwt 사용한다고 가정 시 */
-        http.csrf().disable()
+        http.csrf()
+                .disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
         http.addFilterBefore(
                 jwtTokenFilter,
                 UsernamePasswordAuthenticationFilter.class
+        );
+
+        /* 필터에서 에러 핸들링 하기위해 필터 추가 */
+        http.addFilterBefore(
+                jwtExceptionFilter,
+                jwtTokenFilter.getClass()
         );
 
         return http.build();

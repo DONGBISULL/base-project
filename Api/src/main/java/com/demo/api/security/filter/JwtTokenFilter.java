@@ -2,6 +2,7 @@ package com.demo.api.security.filter;
 
 import com.demo.api.security.provider.JwtTokenProvider;
 import com.demo.api.service.AuthService;
+import com.demo.modules.dto.JwtTokenDto;
 import com.demo.modules.enums.TokenStatus;
 import com.demo.modules.error.CustomException;
 import com.demo.modules.error.ErrorCode;
@@ -46,19 +47,18 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
+        /* 제외할 url 처리 */
+        if (shouldNotFilter(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
         if (authorizationHeader == null) {
-
             Cookie[] cookies = request.getCookies();
-
-            /* 제외할 url 처리 */
-            if (shouldNotFilter(request)) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-
-            /*  요청에서 액세스 토큰 확인 */
+//
+//            /*  요청에서 액세스 토큰 확인 */
             String accessToken = Optional.ofNullable(cookies)
                     .stream()
                     .flatMap(Arrays::stream)
@@ -66,11 +66,22 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                     .findFirst()
                     .map(Cookie::getValue)
                     .orElse(null);
+//
+            String refreshToken = Optional.ofNullable(cookies)
+                    .stream()
+                    .flatMap(Arrays::stream)
+                    .filter(cookie -> "RefreshToken".equals(cookie.getName()))
+                    .findFirst()
+                    .map(Cookie::getValue)
+                    .orElse(null);
 
             if (accessToken == null) {
-//            response.sendRedirect("/oauth/login");
-                throw new CustomException(HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_ACCESS_TOKEN);
-//                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "access token 없음");
+                if (refreshToken == null) {
+                    throw new CustomException(HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_ACCESS_TOKEN, ErrorCode.INVALID_ACCESS_TOKEN.getMessage());
+                } else {
+                    /* 재발행 로직 추가 */
+//                    authService.reissueToken(refreshToken);
+                }
             }
 
             /* 액세스 토큰 유효성 검사 */
@@ -81,31 +92,21 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                     Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     filterChain.doFilter(request, response);
-                    break;
+                    return;
 //        액세스 토큰이 만료된 경우
                 case EXPIRED:
-//                    String refreshToken = Optional.ofNullable(cookies)
-//                            .stream()
-//                            .flatMap(Arrays::stream)
-//                            .filter(cookie -> "RefreshToken".equals(cookie.getName()))
-//                            .findFirst()
-//                            .map(Cookie::getValue)
-//                            .orElse(null);
                     /* 에러를 발생시켜서 재요청 보내도록 수정 */
-                    throw new CustomException(HttpStatus.UNAUTHORIZED, ErrorCode.EXPIRED_ACCESS_TOKEN);
+                    throw new CustomException(HttpStatus.UNAUTHORIZED, ErrorCode.EXPIRED_ACCESS_TOKEN, ErrorCode.EXPIRED_ACCESS_TOKEN.getMessage());
                     /* 리프레시 토큰 재발행 시도 */
-//                    authService.reissueToken(refreshToken);
                 case INVALID:
-                    throw new CustomException(HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_ACCESS_TOKEN);
-//                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "access token 유효하지 않음 ");
-//                response.sendRedirect("/oauth/login");
-//                    break;
+                    throw new CustomException(HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_ACCESS_TOKEN, ErrorCode.INVALID_ACCESS_TOKEN.getMessage());
             }
+        } else {
 
         }
-
         /* 새 액세스 토큰으로 요청 재설정 */
     }
+
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {

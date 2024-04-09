@@ -34,7 +34,6 @@ public class OAuth2AuthenticationFailHandler implements AuthenticationFailureHan
         if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
             // AJAX 요청인 경우
             throw new CustomException(HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED);
-//            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed: " + exception.getMessage());
         } else {
             // OAuth2 요청 또는 일반적인 요청인 경우
             response.sendRedirect("http://localhost:3000");

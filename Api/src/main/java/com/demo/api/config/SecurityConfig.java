@@ -28,7 +28,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource(CorsProperties corsProperties) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins()); // 모든 origin 허용
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:8080")); // 모든 origin 허용
+//        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins()); // 모든 origin 허용
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "DELETE", "PUT")); // 모든 HTTP 메서드 허용
         configuration.setAllowedHeaders(Arrays.asList(
                 "Accept"
@@ -45,10 +46,11 @@ public class SecurityConfig {
                 , "X-XSRF-TOKEN" // 토큰을 전송하기 위한 헤더
                 , "Cookie" // 추후 제거 가능
         )); // 모든 헤더 허용
-        configuration.setAllowCredentials(true); // 인증 정보를 함께 전송 허용
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
         // 메서드는 특정 URL 패턴에 대한 CORS 구성을 등록하는 데 사용
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+        configuration.setAllowCredentials(true); // 인증 정보를 함께 전송 허용
         return source;
     }
 
