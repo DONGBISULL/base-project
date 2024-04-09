@@ -33,28 +33,26 @@ async function socialLogin(type) {
 
 <template>
     <div>
-        <button @click="socialLogin('kakao')">
-            카카오
-        </button>
-        <br>
-        <a :href="config.public?.API_BASE_URL+config.public?.KAKAO_LOGIN_PREFIX+'?redirect_uri=http://localhost:3000/oauth/redirected/kakao'">
-            스프링에서 카카오 로그인
-        </a>
+<!--        <button @click="socialLogin('kakao')">-->
+<!--            카카오-->
+<!--        </button>-->
+<!--        <br>-->
+<!--        <a :href="config.public?.API_BASE_URL+config.public?.KAKAO_LOGIN_PREFIX+'?redirect_uri=http://localhost:3000/oauth/redirected/kakao'">-->
+<!--            스프링에서 카카오 로그인-->
+<!--        </a>-->
 
-<!--
-       http://localhost:8080/oauth2/authorization/kakao?redirect_uri=http://localhost:3000/oauth/redirected/kakao
- -->
-        <!--        <a class="p-2"-->
-        <!--           :href="config.public?.API_BASE_URL+config.public?.KAKAO_LOGIN_PREFIX+'?redirect_uri=http://localhost:3000/login/kakao'"-->
-        <!--        >-->
-        <!--            카카오로그인-->
-        <!--        </a>-->
-        <!--        <br>-->
-        <!--        <a class="p-2"-->
-        <!--           :href="config.public?.API_BASE_URL+config.public?.GOOGLE_LOGIN_PREFIX+'?redirect_uri=http://localhost:3000/login/google'"-->
-        <!--        >-->
-        <!--            구글 로그인-->
-        <!--        </a>-->
+
+                <a class="p-2"
+                   :href="config?.API_BASE_URL+config?.KAKAO_LOGIN_PREFIX+'?redirect_uri=http://localhost:8080/login/kakao'"
+                >
+                    카카오로그인
+                </a>
+                <br>
+                <a class="p-2"
+                   :href="config?.API_BASE_URL+config?.GOOGLE_LOGIN_PREFIX+'?redirect_uri=http://localhost:8080/login/google'"
+                >
+                    구글 로그인
+                </a>
     </div>
 </template>
 <style lang="scss" scoped>

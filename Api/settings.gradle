@@ -1,3 +1,6 @@
 rootProject.name = 'Api'
 include '../Modules'
 findProject(':../Modules')?.name = 'Modules'
+
+include '../Common'
+findProject(':../Common')?.name = 'Common'

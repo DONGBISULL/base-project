@@ -3,11 +3,17 @@ package com.demo.api.security.filter;
 import com.demo.api.security.provider.JwtTokenProvider;
 import com.demo.api.service.AuthService;
 import com.demo.modules.enums.TokenStatus;
+import com.demo.modules.error.CustomException;
+import com.demo.modules.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -26,7 +32,7 @@ import java.util.Optional;
 public class JwtTokenFilter extends OncePerRequestFilter {
 
     /* 제외할 url */
-    private final List<String> excludedPatterns = Arrays.asList("/oauth/**", "/login/**", "/images/**" ,"/favicon.*", "/*/icon-*");
+    private final List<String> excludedPatterns = Arrays.asList("/oauth/**", "/login/**", "/images/**", "/favicon.*", "/*/icon-*");
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
@@ -34,62 +40,69 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final AuthService authService;
 
+    @Value("${front.api}")
+    private String frontApi;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        String authorizationHeader = request.getHeader("Authorization");
+        String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        Cookie[] cookies = request.getCookies();
+        if (authorizationHeader == null) {
 
-        /* 제외할 url 처리 */if (shouldNotFilter(request)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+            Cookie[] cookies = request.getCookies();
 
-        /*  요청에서 액세스 토큰 확인 */
-        String accessToken = Optional.ofNullable(cookies)
-                .stream()
-                .flatMap(Arrays::stream)
-                .filter(cookie -> "AccessToken".equals(cookie.getName()))
-                .findFirst()
-                .map(Cookie::getValue)
-                .orElse(null);
-
-        if (accessToken == null) {
-            response.sendRedirect("/oauth/login");
-            return;
-        }
-
-        /* 액세스 토큰 유효성 검사 */
-        TokenStatus tokenStatus = jwtTokenProvider.validateToken(accessToken);
-
-        switch (tokenStatus) {
-            case VALID:
+            /* 제외할 url 처리 */
+            if (shouldNotFilter(request)) {
                 filterChain.doFilter(request, response);
-                break;
-//        액세스 토큰이 만료된 경우
-            case EXPIRED:
-                String refreshToken = Optional.ofNullable(cookies)
-                        .stream()
-                        .flatMap(Arrays::stream)
-                        .filter(cookie -> "RefreshToken".equals(cookie.getName()))
-                        .findFirst()
-                        .map(Cookie::getValue)
-                        .orElse(null);
-                /* 쿠키에서 리프레시 토큰 확인 */
-                if (refreshToken == null) {
-                    response.sendRedirect("/oauth/login");
-                    return;
-                }
-                /* 리프레시 토큰 재발행 시도 */
-                authService.reissueToken(refreshToken);
-                break;
-            case INVALID:
-                response.sendRedirect("/oauth/login");
-                break;
-        }
+                return;
+            }
 
-        /* 리프레시 토큰으로 액세스 토큰 재발행  */
+            /*  요청에서 액세스 토큰 확인 */
+            String accessToken = Optional.ofNullable(cookies)
+                    .stream()
+                    .flatMap(Arrays::stream)
+                    .filter(cookie -> "AccessToken".equals(cookie.getName()))
+                    .findFirst()
+                    .map(Cookie::getValue)
+                    .orElse(null);
+
+            if (accessToken == null) {
+//            response.sendRedirect("/oauth/login");
+                throw new CustomException(HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_ACCESS_TOKEN);
+//                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "access token 없음");
+            }
+
+            /* 액세스 토큰 유효성 검사 */
+            TokenStatus tokenStatus = jwtTokenProvider.validateToken(accessToken);
+
+            switch (tokenStatus) {
+                case VALID:
+                    Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    filterChain.doFilter(request, response);
+                    break;
+//        액세스 토큰이 만료된 경우
+                case EXPIRED:
+//                    String refreshToken = Optional.ofNullable(cookies)
+//                            .stream()
+//                            .flatMap(Arrays::stream)
+//                            .filter(cookie -> "RefreshToken".equals(cookie.getName()))
+//                            .findFirst()
+//                            .map(Cookie::getValue)
+//                            .orElse(null);
+                    /* 에러를 발생시켜서 재요청 보내도록 수정 */
+                    throw new CustomException(HttpStatus.UNAUTHORIZED, ErrorCode.EXPIRED_ACCESS_TOKEN);
+                    /* 리프레시 토큰 재발행 시도 */
+//                    authService.reissueToken(refreshToken);
+                case INVALID:
+                    throw new CustomException(HttpStatus.UNAUTHORIZED, ErrorCode.INVALID_ACCESS_TOKEN);
+//                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "access token 유효하지 않음 ");
+//                response.sendRedirect("/oauth/login");
+//                    break;
+            }
+
+        }
 
         /* 새 액세스 토큰으로 요청 재설정 */
     }

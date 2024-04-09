@@ -17,6 +17,12 @@ configurations {
     }
 }
 
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:2021.0.8"
+    }
+}
+
 repositories {
     mavenCentral()
 }
@@ -31,6 +37,15 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    /* feign 통신 위해 추가 */
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
+    /* validation 위해 추가 */
+//    implementation 'org.apache.commons:commons-lang3:3.12.0'
+
+    /* 테이터 바인딩 */
+//    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.3'
 
     /* 시큐리티 위해 추가 */
     implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -69,6 +84,7 @@ dependencies {
 
     /* 모듈 임포트 */
     implementation project(':Modules')
+    implementation project(':Common')
 }
 
 tasks.named('test') {

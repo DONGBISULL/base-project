@@ -12,7 +12,7 @@ import java.util.List;
 @Setter
 @Getter
 @NoArgsConstructor
-@ConfigurationProperties(prefix = "security.cors")
+@ConfigurationProperties(prefix = "spring.security.cors")
 public class CorsProperties {
 
     private List<String> allowedOrigins;

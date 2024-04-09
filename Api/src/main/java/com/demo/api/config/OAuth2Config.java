@@ -16,7 +16,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
-import org.springframework.security.oauth2.client.endpoint.NimbusAuthorizationCodeTokenResponseClient;
+import org.springframework.security.oauth2.client.endpoint.DefaultAuthorizationCodeTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -69,8 +69,8 @@ public class OAuth2Config {
                                 .redirectionEndpoint(
                                         redirection ->
                                                 redirection
-                                                        .baseUri("/login/social/**")
-                                ).tokenEndpoint(tokenEndpoint -> tokenEndpoint // 토큰 엔드포인트 설정
+                                                        .baseUri("/login/social/**"))
+                                .tokenEndpoint(tokenEndpoint -> tokenEndpoint // 토큰 엔드포인트 설정
                                         .accessTokenResponseClient(accessTokenResponseClient()))
                                 .userInfoEndpoint(userInfo -> userInfo
                                         .userService(auth2UserService)
@@ -98,7 +98,7 @@ public class OAuth2Config {
 
     @Bean
     public OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> accessTokenResponseClient() {
-        return new NimbusAuthorizationCodeTokenResponseClient();
+        return new DefaultAuthorizationCodeTokenResponseClient();
     }
 
     /*
