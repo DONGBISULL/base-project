@@ -1,6 +1,6 @@
 package com.demo.api.security.filter;
 
-import com.demo.modules.enums.CustomException;
+import com.demo.modules.error.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

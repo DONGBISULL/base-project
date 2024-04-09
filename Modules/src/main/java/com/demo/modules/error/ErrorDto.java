@@ -1,4 +1,4 @@
-package com.demo.modules.dto;
+package com.demo.modules.error;
 
 import lombok.Builder;
 import lombok.Data;

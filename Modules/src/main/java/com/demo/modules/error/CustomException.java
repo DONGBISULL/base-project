@@ -1,4 +1,4 @@
-package com.demo.modules.enums;
+package com.demo.modules.error;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;

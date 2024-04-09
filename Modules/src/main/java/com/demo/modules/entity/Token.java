@@ -7,6 +7,7 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -21,7 +22,7 @@ public class Token extends BaseEntity {
     }
 
     @Builder
-    public Token(Member member, String refreshToken, Date expirationDate) {
+    public Token(Member member, String refreshToken, LocalDateTime expirationDate) {
         this.member = member;
         this.refreshToken = refreshToken;
         this.expirationDate = expirationDate;
@@ -40,7 +41,7 @@ public class Token extends BaseEntity {
     private String refreshToken;
 
     @Column(name = "expiration_date")
-    private Date expirationDate;
+    private LocalDateTime expirationDate;
 
 
 }

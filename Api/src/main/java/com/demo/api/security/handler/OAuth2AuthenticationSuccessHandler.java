@@ -45,7 +45,6 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         CustomUserDetail principal = (CustomUserDetail) authentication.getPrincipal();
         MemberDto member = principal.getMember();
         JwtTokenDto token = jwtTokenProvider.createToken(member);
-
         /* 토큰 정보 저장 */
         tokenRepository.save(Token.builder()
                 .expirationDate(token.getRefreshExpirationDate())
@@ -56,17 +55,16 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         /* 쿠키로 리프레시 토큰 생성 */
         jwtTokenProvider.accessTokenWithCookie(token);
         jwtTokenProvider.refreshTokenWithCookie(token);
-        response.addHeader("Authorization", "Bearer " + token.getAccessToken());
+//        response.addHeader("Authorization", "Bearer " + token.getAccessToken());
 
         log.debug("login success !!!!");
-
+        response.sendRedirect("http://localhost:3000" + "/oauth/check");
         /* 프론트가 따로 분리된 상황이 아니므로 리다이렉트 처리 존재
          *   보통 헤더에 실어서 전달만 함
          * */
 //        response.addHeader("Authorization", "Bearer " + accessToken);
 
 //        response.addHeader("Refresh", refreshToken);
-//        response.addHeader("location","http://localhost:3000");
 //        if (authentication instanceof OAuth2AuthenticationToken) {
 //            // OAuth2 소셜 로그인인 경우의 처리
 //            System.out.println("=======  OAuth2AuthenticationToken =========");
