@@ -56,8 +56,9 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
         /* 쿠키로 리프레시 토큰 생성 */
         jwtTokenProvider.accessTokenWithCookie(token);
         jwtTokenProvider.refreshTokenWithCookie(token);
-        response.addHeader("Authorization", "Bearer " + token.getAccessToken());
-
+//        response.addHeader("Authorization", "Bearer " + token.getAccessToken());
+        jwtTokenProvider.setAuthorizeHeader(response, token.getAccessToken());
+        response.sendRedirect("http://localhost:3000/oauth/check");
         log.debug("login success !!!!");
 
         /* 프론트가 따로 분리된 상황이 아니므로 리다이렉트 처리 존재

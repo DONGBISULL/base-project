@@ -1,15 +1,30 @@
 package com.demo.api.security.provider;
 
 
+import com.demo.modules.dto.CustomUserDetail;
 import com.demo.modules.dto.JwtTokenDto;
 import com.demo.modules.dto.MemberDto;
+import com.demo.modules.dto.MemberUser;
+import com.demo.modules.entity.Member;
+import com.demo.modules.enums.ProviderType;
+import com.demo.modules.enums.Role;
 import com.demo.modules.enums.TokenStatus;
+import com.demo.modules.error.CustomException;
+import com.demo.modules.error.ErrorCode;
+import com.nimbusds.jwt.JWT;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -19,6 +34,7 @@ import javax.crypto.SecretKey;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -42,6 +58,8 @@ public class JwtTokenProvider {
 
     private SecretKey key;
 
+    private final ModelMapper modelMapper;
+
     @PostConstruct
     private void initialize() {
         getSigningKey();
@@ -54,11 +72,75 @@ public class JwtTokenProvider {
     }
 
     /**
+     * AccessToken 헤더에 세팅
+     */
+    public void setAuthorizeHeader(HttpServletResponse response, String token) {
+        response.addHeader(TOKEN_HEADER, TOKEN_PREFIX + token);
+    }
+
+    /**
+     * AccessToken 헤더에서 얻기
+     */
+    public String getAccessTokenByHeader(String authorizationHeader) {
+        String accessToken = authorizationHeader.substring(TOKEN_PREFIX.length());
+        return accessToken;
+    }
+
+    public MemberDto getMemberDto(Claims payload) {
+        String memId = payload.getSubject();
+        String username = (String) payload.get("username");
+        String email = (String) payload.get("getEmail");
+        String socialId = (String) payload.get("socialId");
+        String providerName = (String) payload.get("providerType");
+        ProviderType providerType = ProviderType.valueOf(providerName);
+        String imageUrl = (String) payload.get("imageUrl");
+        return MemberDto.builder()
+                .build();
+    }
+
+    /**
+     * JWT 토큰에 들어있는 정보fh Authentication 생성
+     */
+    public Authentication getAuthentication(String accessToken) {
+        // 토큰 복호화
+        Claims payload = getJwtClaimsByPayload(accessToken);
+
+        MemberDto memberDto = getMemberDto(payload);
+        Set<Role> roles = (Set<Role>) payload.get("roles");
+        memberDto.setRoles(roles);
+        Set<GrantedAuthority> authorities = getAuthorities(roles);
+
+        Member member = modelMapper.map(memberDto, Member.class);
+
+        CustomUserDetail userDetail = new CustomUserDetail(
+                new MemberUser(
+                        member, UUID.randomUUID().toString(), authorities), null);
+        // UserDetails 객체를 만들어서 Authentication 리턴
+//        UserDetails principal = new User(claims.getSubject(), "", authorities);
+//        return new UsernamePasswordAuthenticationToken(principal, "", authorities);
+        /* UsernamePasswordAuthenticationToken
+         * 주체 userDetail :사용자
+         * credentials : 보통 비밀번호
+         * authorities : 권한
+         *  */
+        return new UsernamePasswordAuthenticationToken(userDetail, "", authorities);
+    }
+
+    private Set<GrantedAuthority> getAuthorities(Set<Role> roles) {
+        if (roles != null && !roles.isEmpty()) {
+            return roles.stream()
+                    .map(role -> new SimpleGrantedAuthority(role.name()))
+                    .collect(Collectors.toSet());
+        }
+        return null;
+    }
+
+    /**
      * 처음 로그인했을 경우 토큰 생성
      */
     public JwtTokenDto createToken(MemberDto memberDto) {
         long now = (new Date()).getTime();
-        String accessToken = generateAccessToken(memberDto , now);
+        String accessToken = generateAccessToken(memberDto, now);
         String refreshToken = generateRefreshToken(now);
         return JwtTokenDto.builder()
                 .memberId(memberDto.getId())
@@ -70,7 +152,7 @@ public class JwtTokenProvider {
     }
 
     /* memberDto 만으로 토큰 생성하도록 구현 */
-    public String generateAccessToken(MemberDto memberDto , long now){
+    public String generateAccessToken(MemberDto memberDto, long now) {
         Map<String, Object> claims = new HashMap<>();
         setMemberClaim(memberDto, claims);
         return createAccessToken(memberDto, claims, now);
@@ -85,6 +167,7 @@ public class JwtTokenProvider {
         claims.put("socialId", member.getSocialId());
         claims.put("providerType", member.getProviderType());
         claims.put("imageUrl", member.getImageUrl());
+        claims.put("roles", member.getRoles());
     }
 
     /**
@@ -147,15 +230,17 @@ public class JwtTokenProvider {
             }
         } catch (IllegalArgumentException e) {
             log.debug("jwt 문자열이 null 이거나 비어있음 ");
+            throw new CustomException(HttpStatus.BAD_REQUEST, ErrorCode.BAD_REQUEST);
         } catch (JwtException e) {
             if (e instanceof ExpiredJwtException) {
                 log.debug("토큰이 만료되었습니다.");
                 return TokenStatus.EXPIRED;
             } else {
-                log.debug("나 유효성을 검증할 수 없는 경우");
+                log.debug("유효성을 검증할 수 없는 경우");
+                throw new CustomException(HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED);
             }
         }
-        return TokenStatus.INVALID;
+//        return TokenStatus.INVALID;
     }
 
     public Jws<Claims> getJwtClaims(String token) {
@@ -185,11 +270,6 @@ public class JwtTokenProvider {
         return payload.get(name);
     }
 
-    public JwtTokenDto reCreateAccessToken(String refreshToken) {
-        return null;
-    }
-
-
     public void refreshTokenWithCookie(JwtTokenDto tokenDto) {
         setCookie(tokenDto.getRefreshToken(), "RefreshToken", tokenDto.getRefreshExpirationDate());
     }
@@ -204,11 +284,23 @@ public class JwtTokenProvider {
         cookie.setHttpOnly(true);
 //        cookie.setSecure(true);
         Date now = new Date();
-        long maxTime =  expireTime.getTime() - now.getTime() ;
-        cookie.setMaxAge((int) maxTime);
+        long maxTime = expireTime.getTime() - now.getTime();
+        cookie.setMaxAge((int) maxTime / 1000);
         HttpServletResponse response = ((ServletRequestAttributes) RequestContextHolder
                 .getRequestAttributes()).getResponse();
         response.addCookie(cookie);
     }
 
+    /**
+     * 토큰 삭제
+     */
+    public void removeCookie(String token, String tokenType) {
+        String accessToken = token;
+        Cookie cookie = new Cookie(tokenType, accessToken);
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(0);
+        HttpServletResponse response = ((ServletRequestAttributes) RequestContextHolder
+                .getRequestAttributes()).getResponse();
+        response.addCookie(cookie);
+    }
 }
