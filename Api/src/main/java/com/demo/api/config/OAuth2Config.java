@@ -48,9 +48,9 @@ public class OAuth2Config {
 
     private final JwtTokenFilter jwtTokenFilter;
 
-    private final JwtExceptionFilter jwtExceptionFilter;
-
     private final TokenRepository tokenRepository;
+
+    private final JwtExceptionFilter JwtExceptionFilter;
 
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -59,7 +59,7 @@ public class OAuth2Config {
 
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .antMatchers("/oauth/**", "/login/**", "/images/**").permitAll()
+                        .antMatchers("/oauth/**", "/login/**", "/images/**" , "/auth/reissueToken").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(
@@ -72,8 +72,8 @@ public class OAuth2Config {
                                 .redirectionEndpoint(
                                         redirection ->
                                                 redirection
-                                                        .baseUri("/login/social/**"))
-                                .tokenEndpoint(tokenEndpoint -> tokenEndpoint // 토큰 엔드포인트 설정
+                                                        .baseUri("/login/social/**")
+                                ).tokenEndpoint(tokenEndpoint -> tokenEndpoint // 토큰 엔드포인트 설정
                                         .accessTokenResponseClient(accessTokenResponseClient()))
                                 .userInfoEndpoint(userInfo -> userInfo
                                         .userService(auth2UserService)
@@ -89,8 +89,7 @@ public class OAuth2Config {
         http.cors();
 
         /* jwt 사용한다고 가정 시 */
-        http.csrf()
-                .disable()
+        http.csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
         http.addFilterBefore(
@@ -100,7 +99,7 @@ public class OAuth2Config {
 
         /* 필터에서 에러 핸들링 하기위해 필터 추가 */
         http.addFilterBefore(
-                jwtExceptionFilter,
+                JwtExceptionFilter,
                 jwtTokenFilter.getClass()
         );
 

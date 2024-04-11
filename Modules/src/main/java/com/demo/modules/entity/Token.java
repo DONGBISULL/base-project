@@ -22,7 +22,7 @@ public class Token extends BaseEntity {
     }
 
     @Builder
-    public Token(Member member, String refreshToken, LocalDateTime expirationDate) {
+    public Token(Member member, String refreshToken, Date expirationDate) {
         this.member = member;
         this.refreshToken = refreshToken;
         this.expirationDate = expirationDate;
@@ -41,7 +41,7 @@ public class Token extends BaseEntity {
     private String refreshToken;
 
     @Column(name = "expiration_date")
-    private LocalDateTime expirationDate;
+    private Date expirationDate;
 
 
 }

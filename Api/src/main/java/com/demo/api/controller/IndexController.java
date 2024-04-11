@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -19,20 +20,16 @@ import javax.servlet.http.HttpSession;
 @Slf4j
 public class IndexController {
 
-    private final ClientRegistrationRepository clientRegistrationRepository;
-
-    private final OAuth2AuthorizedClientService authorizedClientService;
-
 
     @GetMapping("/")
-    public String index(HttpSession session, Authentication authentication) {
+    public String index(@CookieValue("AccessToken") String cookie , Authentication authentication) {
+        log.info(cookie);
         if (authentication == null) {
             return "redirect:/oauth/login";
         }
-//        ClientRegistration kakaoRegistration = clientRegistrationRepository.findByRegistrationId("kakao");
-
         return "index";
     }
+
 
     @GetMapping("/home")
     public String home(Model model, Authentication authentication) {

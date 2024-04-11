@@ -19,6 +19,8 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -63,7 +65,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     /* user 정보 추출 함수 생성 */
     private CustomUserDetail createCustomUserDetail(OAuth2User oAuth2User, Member member) {
-        Set<GrantedAuthority> authorities = extractAuthorities(member);
+        Collection<? extends GrantedAuthority> authorities = extractAuthorities(member);
 //        OAuthUserDto userDto = new OAuthUserDto(authorities, attributes, userNameAttributeName);
         CustomUserDetail userDto = new CustomUserDetail(new MemberUser(member, member.getPassword(), authorities), oAuth2User.getAttributes());
         return userDto;
@@ -92,7 +94,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     }
 
     /* 권한 타입 생성 */
-    private Set<GrantedAuthority> extractAuthorities(Member member) {
+    private Collection<? extends GrantedAuthority> extractAuthorities(Member member) {
+        if (member.getRoles() == null || member.getRoles().isEmpty()) return Collections.emptyList();
         return member.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(role.name()))
                 .collect(Collectors.toSet());
